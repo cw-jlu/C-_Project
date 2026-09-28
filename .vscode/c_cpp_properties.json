@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "name": "MSYS2-UCRT64",
+      "compilerPath": "D:/APPfile/MSYS2/ucrt64/bin/g++.exe",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-gcc-x64",
+      "includePath": ["${workspaceFolder}/include"],
+      "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+      "configurationProvider": "ms-vscode.cmake-tools"
+    }
+  ],
+  "version": 4
+}

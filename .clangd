@@ -1,0 +1,4 @@
+CompileFlags:
+  CompilationDatabase: build
+  # 源码为 GBK，关闭 clang 对非 UTF-8 字符串的编码警告
+  Add: [-Wno-invalid-source-encoding]
