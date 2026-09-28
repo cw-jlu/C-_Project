@@ -1,0 +1,27 @@
+{
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": false,
+  "files.eol": "\n",
+  "[cpp]": {
+    "files.encoding": "gbk"
+  },
+  "[c]": {
+    "files.encoding": "gbk"
+  },
+  "[plaintext]": {
+    "files.encoding": "gbk"
+  },
+  "cmake.useCMakePresets": "always",
+  "cmake.configureOnOpen": true,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "clangd.arguments": ["--compile-commands-dir=${workspaceFolder}/build"],
+  "files.associations": {
+    "*.h": "cpp"
+  },
+  "code-runner.runInTerminal": true,
+  "code-runner.saveFileBeforeRun": true,
+  "code-runner.executorMap": {
+    "cpp": "cmd /c \"$workspaceRoot\\run.bat\"",
+    "c": "cmd /c \"$workspaceRoot\\run.bat\""
+  }
+}

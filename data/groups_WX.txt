@@ -1,0 +1,8 @@
+# 微信群（只能推荐加入，无子群，仅群主有特权）
+# 格式同 groups_QQ.txt
+1001,相亲相爱一家人,wx_zhangsan,WX,wx_zhangsan;wx_lisi,-,-
+1002,宿舍群,wx_lisi,WX,wx_lisi;wx_zhangsan;wx_sunqi,-,-
+1003,吉大二手交易,wx_zhaoliu,WX,wx_zhaoliu;wx_sunqi,-,-
+1004,课设小组,wx_zhangsan,WX,wx_zhangsan;wx_lisi;wx_zhaoliu,-,-
+1005,长春美食,wx_sunqi,WX,wx_sunqi,-,-
+1006,跑步打卡,wx_lisi,WX,wx_lisi;wx_zhaoliu,-,-

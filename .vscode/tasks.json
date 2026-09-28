@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "configure",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--preset", "debug"],
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "cmake",
+      "args": ["--build", "--preset", "debug"],
+      "dependsOn": "configure",
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "run",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/IMSystemXST.exe",
+      "options": { "cwd": "${workspaceFolder}" },
+      "dependsOn": "build",
+      "problemMatcher": [],
+      "presentation": { "focus": true, "panel": "dedicated" }
+    }
+  ]
+}

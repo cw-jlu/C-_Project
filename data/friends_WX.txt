@@ -1,0 +1,6 @@
+# 微信好友
+# 格式：本人ID,好友ID,备注
+wx_zhangsan,wx_lisi,室友李四
+wx_lisi,wx_zhangsan,三哥
+wx_lisi,wx_sunqi,孙七
+wx_sunqi,wx_lisi,李四

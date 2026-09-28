@@ -3,3 +3,4 @@ build/
 *.o
 .vs/
 src/output/
+.cache/
