@@ -11,8 +11,8 @@ bool ConsoleXST::s_eof = false;
 
 void ConsoleXST::init() {
 #ifdef _WIN32
-    SetConsoleCP(936);         // 输入：GBK
-    SetConsoleOutputCP(936);   // 输出：GBK
+    SetConsoleCP(936);         // 输入
+    SetConsoleOutputCP(936);   // 输出
 #endif
 }
 
