@@ -10,6 +10,7 @@ public:
     std::unique_ptr<AccountXST> createAccount(
         const std::string& id, const UserXST* owner, const std::string& nickname,
         const DateXST& registerDate, const std::string& extra = "") const override;
+    std::unique_ptr<GroupPolicyXST> createDefaultGroupPolicy() const override;
 };
 
 #endif

@@ -6,28 +6,19 @@
 
 #include "FriendManagerXST.h"
 #include "FriendXST.h"
-#include "ServiceTypeXST.h"
+#include "ServiceMenuXST.h"
 
-class AccountXST;
-class PlatformXST;
-class ServiceXST;
-class UserXST;
-
-// 好友管理菜单：以某个用户的身份，在其已开通的服务中维护好友
-class FriendMenuXST {
+// 好友管理菜单：在当前服务中维护好友，并支持跨服务的共同好友与推荐
+class FriendMenuXST : public ServiceMenuXST {
 public:
     FriendMenuXST(PlatformXST& platform, const std::string& personId);
 
-    void run();
+protected:
+    std::string title() const override;
+    std::vector<std::string> items() const override;
+    void handle(int index) override;
 
 private:
-    AccountXST& currentAccount() const;
-    ServiceXST& currentService() const;
-
-    // 从本人已开通的服务中选择一个；excludeCurrent 为 true 时不列出当前服务
-    bool chooseService(const std::string& title, bool excludeCurrent, ServiceTypeXST& out) const;
-
-    void switchService();
     void listFriends() const;
     void addFriend();
     void editRemark();
@@ -38,12 +29,8 @@ private:
     void addFromOtherService();
 
     void printFriendTable(const std::vector<FriendXST>& items) const;
-    static std::string describe(const AccountXST& account);   // 如 "QQ 10002(小李飞刀)"
 
-    PlatformXST& m_platform;
     FriendManagerXST m_manager;
-    const UserXST* m_user;
-    ServiceTypeXST m_current;
 };
 
 #endif
