@@ -8,10 +8,12 @@
 
 #include "AccountXST.h"
 #include "FriendOpResultXST.h"
+#include "GroupOpResultXST.h"
+#include "GroupXST.h"
 #include "ServiceTypeXST.h"
 
-// “微X”服务抽象基类：本服务的账号容器，并负责本服务内的好友关系维护
-// 子类通过工厂方法 createAccount() 决定创建哪一种账号
+// “微X”服务抽象基类：本服务的账号容器与群容器，负责本服务内的好友关系与群维护
+// 子类通过工厂方法 createAccount() / createDefaultGroupPolicy() 决定账号类型与默认群模式
 class ServiceXST {
 public:
     virtual ~ServiceXST() = default;
@@ -26,6 +28,9 @@ public:
     virtual std::unique_ptr<AccountXST> createAccount(
         const std::string& id, const UserXST* owner, const std::string& nickname,
         const DateXST& registerDate, const std::string& extra = "") const = 0;
+
+    // 工厂方法：本服务新建群时采用的默认管理模式
+    virtual std::unique_ptr<GroupPolicyXST> createDefaultGroupPolicy() const = 0;
 
     // ---------- 账号容器 ----------
     // ID 重复或该用户已在本服务有账号时抛出 std::invalid_argument
@@ -52,11 +57,44 @@ public:
     // 本服务内两个账号的共同好友
     std::vector<const AccountXST*> commonFriends(const std::string& a, const std::string& b) const;
 
+    // ---------- 群容器 ----------
+    // 以默认管理模式建群，群主自动入群；群号重复或群主账号不存在时抛出 std::invalid_argument
+    GroupXST& createGroup(int groupId, const std::string& name, const std::string& ownerId);
+    GroupXST* findGroup(int groupId);
+    const GroupXST* findGroup(int groupId) const;
+    std::vector<const GroupXST*> groups() const;                              // 按群号排序
+    std::vector<const GroupXST*> groupsOf(const std::string& accountId) const;
+
+    // ---------- 群数据恢复（初始化/读文件用，不做权限检查，非法时抛出 std::invalid_argument） ----------
+    void restoreGroupMember(int groupId, const std::string& accountId);
+    void restoreGroupAdmin(int groupId, const std::string& accountId);
+    void restoreSubGroup(int groupId, const std::string& name, const std::string& creatorId,
+                         const std::vector<std::string>& members);
+
+    // ---------- 群操作（成功后同步维护账号的群列表） ----------
+    GroupOpResultXST applyJoin(int groupId, const std::string& applicant);
+    // 只能邀请自己的好友
+    GroupOpResultXST invite(int groupId, const std::string& inviter, const std::string& invitee);
+    GroupOpResultXST quitGroup(int groupId, const std::string& member);
+    GroupOpResultXST kick(int groupId, const std::string& op, const std::string& target);
+    GroupOpResultXST setGroupAdmin(int groupId, const std::string& op, const std::string& target,
+                                   bool grant);
+    GroupOpResultXST createSubGroup(int groupId, const std::string& op, const std::string& name,
+                                    const std::vector<std::string>& members);
+    GroupOpResultXST dissolveSubGroup(int groupId, const std::string& op, const std::string& name);
+    // 动态切换群管理模式（policyCode: QQ / WX / WB），群成员数据不变
+    GroupOpResultXST changeGroupPolicy(int groupId, const std::string& op,
+                                       const std::string& policyCode);
+
 protected:
     ServiceXST() = default;
 
 private:
+    GroupXST& requireGroup(int groupId);
+    AccountXST& requireAccount(const std::string& id);
+
     std::map<std::string, std::unique_ptr<AccountXST>> m_accounts;
+    std::map<int, std::unique_ptr<GroupXST>> m_groups;
 };
 
 #endif

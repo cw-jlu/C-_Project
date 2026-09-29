@@ -2,86 +2,40 @@
 
 #include <iomanip>
 #include <iostream>
-#include <stdexcept>
 
 #include "ConsoleXST.h"
 #include "PlatformXST.h"
 
 FriendMenuXST::FriendMenuXST(PlatformXST& platform, const std::string& personId)
-    : m_platform(platform), m_manager(platform), m_user(platform.findUser(personId)),
-      m_current(ServiceTypeXST::QQ) {
-    if (!m_user) throw std::invalid_argument("用户不存在: " + personId);
-    if (!m_user->services().empty()) m_current = *m_user->services().begin();
+    : ServiceMenuXST(platform, personId), m_manager(platform) {}
+
+std::string FriendMenuXST::title() const { return "好友管理"; }
+
+std::vector<std::string> FriendMenuXST::items() const {
+    return {
+        "查看好友列表",
+        "添加好友",
+        "修改好友备注",
+        "删除好友",
+        "查询好友（ID/备注/昵称）",
+        "与某人的共同好友（本服务内）",
+        "跨服务共同好友（两个服务中都是好友的人）",
+        "从其他服务添加好友（如：微信添加QQ推荐好友）"
+    };
 }
 
-AccountXST& FriendMenuXST::currentAccount() const {
-    return *m_platform.accountOf(m_user->id(), m_current);
-}
-
-ServiceXST& FriendMenuXST::currentService() const {
-    return m_platform.service(m_current);
-}
-
-void FriendMenuXST::run() {
-    if (m_user->services().empty()) {
-        std::cout << m_user->name() << " 尚未开通任何服务。\n";
-        return;
+void FriendMenuXST::handle(int index) {
+    switch (index) {
+        case 0: listFriends(); break;
+        case 1: addFriend(); break;
+        case 2: editRemark(); break;
+        case 3: removeFriend(); break;
+        case 4: searchFriends(); break;
+        case 5: showCommonWithin(); break;
+        case 6: showCommonAcross(); break;
+        case 7: addFromOtherService(); break;
+        default: break;
     }
-    while (true) {
-        std::cout << "\n===== 好友管理  用户: " << m_user->name()
-                  << "  当前: " << describe(currentAccount()) << " =====\n"
-                  << "1. 切换服务\n"
-                  << "2. 查看好友列表\n"
-                  << "3. 添加好友\n"
-                  << "4. 修改好友备注\n"
-                  << "5. 删除好友\n"
-                  << "6. 查询好友（ID/备注/昵称）\n"
-                  << "7. 与某人的共同好友（本服务内）\n"
-                  << "8. 跨服务共同好友（两个服务中都是好友的人）\n"
-                  << "9. 从其他服务添加好友（如：微信添加QQ推荐好友）\n"
-                  << "0. 返回\n";
-        int choice = ConsoleXST::readInt("请选择: ", 0, 9);
-        switch (choice) {
-            case 1: switchService(); break;
-            case 2: listFriends(); break;
-            case 3: addFriend(); break;
-            case 4: editRemark(); break;
-            case 5: removeFriend(); break;
-            case 6: searchFriends(); break;
-            case 7: showCommonWithin(); break;
-            case 8: showCommonAcross(); break;
-            case 9: addFromOtherService(); break;
-            default: return;
-        }
-    }
-}
-
-bool FriendMenuXST::chooseService(const std::string& title, bool excludeCurrent,
-                                  ServiceTypeXST& out) const {
-    std::vector<ServiceTypeXST> options;
-    for (ServiceTypeXST type : m_user->services()) {
-        if (excludeCurrent && type == m_current) continue;
-        options.push_back(type);
-    }
-    if (options.empty()) {
-        std::cout << "没有可选择的其他服务（请先开通更多服务）。\n";
-        return false;
-    }
-    std::cout << title << "\n";
-    for (size_t i = 0; i < options.size(); ++i) {
-        std::cout << "  " << i + 1 << ". "
-                  << describe(*m_platform.accountOf(m_user->id(), options[i])) << "\n";
-    }
-    std::cout << "  0. 取消\n";
-    int choice = ConsoleXST::readInt("请选择: ", 0, static_cast<int>(options.size()));
-    if (choice == 0) return false;
-    out = options[choice - 1];
-    return true;
-}
-
-void FriendMenuXST::switchService() {
-    ServiceTypeXST type;
-    if (chooseService("选择要切换到的服务:", false, type)) m_current = type;
 }
 
 void FriendMenuXST::listFriends() const {
@@ -166,8 +120,9 @@ void FriendMenuXST::showCommonWithin() const {
 void FriendMenuXST::showCommonAcross() const {
     ServiceTypeXST other;
     if (!chooseService("与哪个服务比较:", true, other)) return;
-    std::vector<AccountLinkXST> links = m_manager.commonFriendsAcross(m_user->id(), m_current, other);
-    std::cout << serviceDisplayName(m_current) << " 与 " << serviceDisplayName(other)
+    std::vector<AccountLinkXST> links =
+        m_manager.commonFriendsAcross(user().id(), currentType(), other);
+    std::cout << serviceDisplayName(currentType()) << " 与 " << serviceDisplayName(other)
               << " 中都是你好友的人（共 " << links.size() << " 人）:\n";
     for (const AccountLinkXST& link : links) {
         std::cout << "  " << describe(link.source()) << "  <->  " << describe(link.target())
@@ -179,9 +134,9 @@ void FriendMenuXST::addFromOtherService() {
     ServiceTypeXST source;
     if (!chooseService("从哪个服务的好友中推荐:", true, source)) return;
     while (true) {
-        std::vector<AccountLinkXST> links = m_manager.recommend(m_user->id(), m_current, source);
+        std::vector<AccountLinkXST> links = m_manager.recommend(user().id(), currentType(), source);
         if (links.empty()) {
-            std::cout << "没有可推荐的好友（对方需在" << serviceDisplayName(m_current)
+            std::cout << "没有可推荐的好友（对方需在" << serviceDisplayName(currentType())
                       << "中有对应 QQ 号的账号，且尚未成为好友）。\n";
             return;
         }
@@ -193,8 +148,8 @@ void FriendMenuXST::addFromOtherService() {
         std::cout << "  0. 返回\n";
         int choice = ConsoleXST::readInt("选择要添加的好友: ", 0, static_cast<int>(links.size()));
         if (choice == 0) return;
-        FriendOpResultXST result = m_manager.acceptRecommendation(m_user->id(), m_current,
-                                                                  links[choice - 1]);
+        FriendOpResultXST result =
+            m_manager.acceptRecommendation(user().id(), currentType(), links[choice - 1]);
         std::cout << friendOpMessage(result) << "\n";
     }
 }
@@ -213,8 +168,4 @@ void FriendMenuXST::printFriendTable(const std::vector<FriendXST>& items) const 
                   << (account ? account->nickname() : "（账号不存在）") << "\n";
     }
     std::cout << std::right;
-}
-
-std::string FriendMenuXST::describe(const AccountXST& account) {
-    return account.serviceName() + " " + account.id() + "(" + account.nickname() + ")";
 }

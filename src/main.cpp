@@ -1,15 +1,26 @@
 // 模拟即时通信系统 —— 程序入口
-// P2：好友管理演示。演示数据暂时固化在代码中（与 data/ 下文件一致），
+// P3：好友管理 + 群管理演示。演示数据暂时固化在代码中（与 data/ 下文件一致），
 //     P4 将以登录代替“选择用户”，P5 改为从文件加载，P6 整合为正式菜单
 
+#include <initializer_list>
 #include <iostream>
 #include <stdexcept>
 
 #include "ConsoleXST.h"
 #include "FriendMenuXST.h"
+#include "GroupMenuXST.h"
 #include "PlatformXST.h"
 
 namespace {
+
+// 建群并恢复成员与管理员（群主自动入群）
+void seedGroup(ServiceXST& service, int id, const std::string& name, const std::string& owner,
+               std::initializer_list<const char*> members,
+               std::initializer_list<const char*> admins = {}) {
+    service.createGroup(id, name, owner);
+    for (const char* m : members) service.restoreGroupMember(id, m);
+    for (const char* a : admins) service.restoreGroupAdmin(id, a);
+}
 
 void seedDemoData(PlatformXST& p) {
     const ServiceTypeXST QQ = ServiceTypeXST::QQ;
@@ -56,6 +67,47 @@ void seedDemoData(PlatformXST& p) {
     ServiceXST& wb = p.service(WB);
     wb.addFriendship("10001", "10003", "王五", "张三");
     wb.addFriendship("10003", "10004", "赵六", "王五");
+
+    // ---------- 群（每个服务均预置 1001~1006） ----------
+    seedGroup(qq, 1001, "软件学院552401班", "10001", {"10002", "10003", "10004"}, {"10002"});
+    qq.restoreSubGroup(1001, "C++讨论组", "10001", {"10001", "10002"});
+    qq.restoreSubGroup(1001, "课设答疑", "10001", {"10001", "10003", "10004"});
+    seedGroup(qq, 1002, "吉大校友会", "10004", {"10001", "10006"});
+    seedGroup(qq, 1003, "篮球爱好者", "10002", {"10004"});
+    seedGroup(qq, 1004, "考研交流群", "10003", {"10001", "10006"}, {"10001"});
+    seedGroup(qq, 1005, "游戏开黑群", "10006", {"10003", "10004"});
+    seedGroup(qq, 1006, "长春同城", "10001", {});
+
+    seedGroup(wx, 1001, "相亲相爱一家人", "wx_zhangsan", {"wx_lisi"});
+    seedGroup(wx, 1002, "宿舍群", "wx_lisi", {"wx_zhangsan", "wx_sunqi"});
+    seedGroup(wx, 1003, "吉大二手交易", "wx_zhaoliu", {"wx_sunqi"});
+    seedGroup(wx, 1004, "课设小组", "wx_zhangsan", {"wx_lisi", "wx_zhaoliu"});
+    seedGroup(wx, 1005, "长春美食", "wx_sunqi", {});
+    seedGroup(wx, 1006, "跑步打卡", "wx_lisi", {"wx_zhaoliu"});
+
+    seedGroup(wb, 1001, "科技爱好者", "10001", {"10003"});
+    seedGroup(wb, 1002, "吉大新鲜事", "10004", {"10001", "10003"}, {"10001"});
+    seedGroup(wb, 1003, "电影分享", "10003", {});
+    seedGroup(wb, 1004, "摄影交流", "10004", {"10003"});
+    seedGroup(wb, 1005, "读书会", "10001", {"10004"});
+    seedGroup(wb, 1006, "旅行日记", "10003", {"10004"}, {"10004"});
+}
+
+void userMenu(PlatformXST& platform, const UserXST& user) {
+    while (true) {
+        std::cout << "\n===== " << user.name() << " (" << user.id() << ")  已开通: "
+                  << user.servicesText() << " =====\n"
+                  << "1. 好友管理\n"
+                  << "2. 群管理\n"
+                  << "0. 返回\n";
+        int choice = ConsoleXST::readInt("请选择: ", 0, 2);
+        if (choice == 0) return;
+        if (choice == 1) {
+            FriendMenuXST(platform, user.id()).run();
+        } else {
+            GroupMenuXST(platform, user.id()).run();
+        }
+    }
 }
 
 }  // namespace
@@ -84,7 +136,7 @@ int main() {
         std::cout << "  0. 退出\n";
         int choice = ConsoleXST::readInt("请选择: ", 0, static_cast<int>(users.size()));
         if (choice == 0) break;
-        FriendMenuXST(platform, users[choice - 1]->id()).run();
+        userMenu(platform, *users[choice - 1]);
     }
 
     std::cout << "再见！\n";
