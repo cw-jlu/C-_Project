@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "ConsoleXST.h"
+#include "DisplayXST.h"
 #include "FriendMenuXST.h"
 #include "GroupMenuXST.h"
 #include "LoginManagerXST.h"
@@ -12,12 +13,7 @@
 
 namespace {
 std::string joinNames(const std::vector<ServiceTypeXST>& types) {
-    std::string text;
-    for (ServiceTypeXST type : types) {
-        if (!text.empty()) text += "¡¢";
-        text += serviceDisplayName(type);
-    }
-    return text.empty() ? "ÎÞ" : text;
+    return DisplayXST::joinServiceNames(types);
 }
 }
 

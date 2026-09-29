@@ -1,9 +1,9 @@
 #include "FriendMenuXST.h"
 
-#include <iomanip>
 #include <iostream>
 
 #include "ConsoleXST.h"
+#include "DisplayXST.h"
 #include "PlatformXST.h"
 
 FriendMenuXST::FriendMenuXST(PlatformXST& platform, LoginManagerXST& session)
@@ -155,17 +155,5 @@ void FriendMenuXST::addFromOtherService() {
 }
 
 void FriendMenuXST::printFriendTable(const std::vector<FriendXST>& items) const {
-    if (items.empty()) {
-        std::cout << "  （无）\n";
-        return;
-    }
-    std::cout << "  " << std::left << std::setw(16) << "好友ID" << std::setw(18) << "备注"
-              << "昵称\n";
-    for (const FriendXST& f : items) {
-        const AccountXST* account = currentService().findAccount(f.id());
-        std::cout << "  " << std::setw(16) << f.id()
-                  << std::setw(18) << (f.remark().empty() ? "-" : f.remark())
-                  << (account ? account->nickname() : "（账号不存在）") << "\n";
-    }
-    std::cout << std::right;
+    DisplayXST::printFriendTable(std::cout, currentService(), items);
 }
