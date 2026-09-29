@@ -13,7 +13,7 @@ class GroupXST;
 // 群管理菜单：加群、退群、邀请、踢人、管理员、临时讨论组、群特色展示与管理模式切换
 class GroupMenuXST : public ServiceMenuXST {
 public:
-    GroupMenuXST(PlatformXST& platform, const std::string& personId);
+    GroupMenuXST(PlatformXST& platform, LoginManagerXST& session);
 
 protected:
     std::string title() const override;

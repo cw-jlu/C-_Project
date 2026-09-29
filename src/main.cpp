@@ -1,14 +1,13 @@
 // 模拟即时通信系统 —— 程序入口
-// P3：好友管理 + 群管理演示。演示数据暂时固化在代码中（与 data/ 下文件一致），
-//     P4 将以登录代替“选择用户”，P5 改为从文件加载，P6 整合为正式菜单
+// P4：登录 / 注册 / 开通管理 + 好友、群管理。演示数据暂时固化在代码中（与 data/ 下文件一致，
+//     所有账号密码均为 123456），P5 改为从文件加载，P6 整合为正式菜单
 
 #include <initializer_list>
 #include <iostream>
 #include <stdexcept>
 
 #include "ConsoleXST.h"
-#include "FriendMenuXST.h"
-#include "GroupMenuXST.h"
+#include "MainMenuXST.h"
 #include "PlatformXST.h"
 
 namespace {
@@ -35,21 +34,21 @@ void seedDemoData(PlatformXST& p) {
     p.addUser("P006", "周八", DateXST(2003, 12, 15), "四川成都");
 
     // QQ 需先于微博、微信开通（二者对应的 QQ 号必须存在）
-    p.openService("P001", QQ, "10001", "三哥", DateXST(2015, 6, 1));
-    p.openService("P002", QQ, "10002", "小李飞刀", DateXST(2014, 3, 15));
-    p.openService("P003", QQ, "10003", "五五开", DateXST(2016, 9, 10));
-    p.openService("P004", QQ, "10004", "赵六六", DateXST(2013, 1, 20));
-    p.openService("P006", QQ, "10006", "周末愉快", DateXST(2018, 7, 7));
+    p.openService("P001", QQ, "10001", "三哥", "123456", DateXST(2015, 6, 1));
+    p.openService("P002", QQ, "10002", "小李飞刀", "123456", DateXST(2014, 3, 15));
+    p.openService("P003", QQ, "10003", "五五开", "123456", DateXST(2016, 9, 10));
+    p.openService("P004", QQ, "10004", "赵六六", "123456", DateXST(2013, 1, 20));
+    p.openService("P006", QQ, "10006", "周末愉快", "123456", DateXST(2018, 7, 7));
 
-    p.openService("P001", WX, "wx_zhangsan", "张三", DateXST(2019, 5, 5), "10001");
-    p.openService("P002", WX, "wx_lisi", "李四", DateXST(2019, 8, 8), "10002");
-    p.openService("P004", WX, "wx_zhaoliu", "赵六", DateXST(2020, 1, 1), "10004");
-    p.openService("P005", WX, "wx_sunqi", "孙七", DateXST(2021, 3, 3));
-    p.openService("P006", WX, "wx_zhouba", "周八", DateXST(2020, 6, 18));   // 未绑定 QQ
+    p.openService("P001", WX, "wx_zhangsan", "张三", "123456", DateXST(2019, 5, 5), "10001");
+    p.openService("P002", WX, "wx_lisi", "李四", "123456", DateXST(2019, 8, 8), "10002");
+    p.openService("P004", WX, "wx_zhaoliu", "赵六", "123456", DateXST(2020, 1, 1), "10004");
+    p.openService("P005", WX, "wx_sunqi", "孙七", "123456", DateXST(2021, 3, 3));
+    p.openService("P006", WX, "wx_zhouba", "周八", "123456", DateXST(2020, 6, 18));   // 未绑定 QQ
 
-    p.openService("P001", WB, "10001", "张三的微博", DateXST(2017, 2, 2));
-    p.openService("P003", WB, "10003", "王五说", DateXST(2018, 4, 12));
-    p.openService("P004", WB, "10004", "赵六看世界", DateXST(2016, 10, 1));
+    p.openService("P001", WB, "10001", "张三的微博", "123456", DateXST(2017, 2, 2));
+    p.openService("P003", WB, "10003", "王五说", "123456", DateXST(2018, 4, 12));
+    p.openService("P004", WB, "10004", "赵六看世界", "123456", DateXST(2016, 10, 1));
 
     ServiceXST& qq = p.service(QQ);
     qq.addFriendship("10001", "10002", "室友李四", "三哥");
@@ -93,23 +92,6 @@ void seedDemoData(PlatformXST& p) {
     seedGroup(wb, 1006, "旅行日记", "10003", {"10004"}, {"10004"});
 }
 
-void userMenu(PlatformXST& platform, const UserXST& user) {
-    while (true) {
-        std::cout << "\n===== " << user.name() << " (" << user.id() << ")  已开通: "
-                  << user.servicesText() << " =====\n"
-                  << "1. 好友管理\n"
-                  << "2. 群管理\n"
-                  << "0. 返回\n";
-        int choice = ConsoleXST::readInt("请选择: ", 0, 2);
-        if (choice == 0) return;
-        if (choice == 1) {
-            FriendMenuXST(platform, user.id()).run();
-        } else {
-            GroupMenuXST(platform, user.id()).run();
-        }
-    }
-}
-
 }  // namespace
 
 int main() {
@@ -123,21 +105,7 @@ int main() {
         return 1;
     }
 
-    while (true) {
-        std::cout << "\n==============================\n"
-                  << "   腾*立体社交平台  (XST)\n"
-                  << "==============================\n"
-                  << "选择用户（P4 将改为登录）:\n";
-        std::vector<const UserXST*> users = platform.users();
-        for (size_t i = 0; i < users.size(); ++i) {
-            std::cout << "  " << i + 1 << ". " << users[i]->name() << " (" << users[i]->id()
-                      << ")  已开通: " << users[i]->servicesText() << "\n";
-        }
-        std::cout << "  0. 退出\n";
-        int choice = ConsoleXST::readInt("请选择: ", 0, static_cast<int>(users.size()));
-        if (choice == 0) break;
-        userMenu(platform, *users[choice - 1]);
-    }
+    MainMenuXST(platform).run();
 
     std::cout << "再见！\n";
     return 0;

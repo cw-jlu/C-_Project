@@ -7,15 +7,16 @@
 #include "ServiceTypeXST.h"
 
 class AccountXST;
+class LoginManagerXST;
 class PlatformXST;
 class ServiceXST;
 class UserXST;
 
-// 服务菜单抽象基类：以某个用户的身份，在其已开通的某个服务中进行操作
+// 服务菜单抽象基类：以当前登录用户的身份，在其某个已登录的服务中进行操作
 // run() 为模板方法：统一负责菜单循环，第 1 项固定为“切换服务”，其余选项由子类提供
 class ServiceMenuXST {
 public:
-    ServiceMenuXST(PlatformXST& platform, const std::string& personId);
+    ServiceMenuXST(PlatformXST& platform, LoginManagerXST& session);
     virtual ~ServiceMenuXST() = default;
 
     void run();
@@ -26,21 +27,22 @@ protected:
     virtual void handle(int index) = 0;                     // index 对应 items() 下标
 
     PlatformXST& platform() const;
+    LoginManagerXST& session() const;
     const UserXST& user() const;
     ServiceTypeXST currentType() const;
     ServiceXST& currentService() const;
     AccountXST& currentAccount() const;
 
-    // 从本人已开通的服务中选择一个；excludeCurrent 为 true 时不列出当前服务
+    // 从本人已开通的服务中选择一个（显示登录状态）；excludeCurrent 为 true 时不列出当前服务
     bool chooseService(const std::string& prompt, bool excludeCurrent, ServiceTypeXST& out) const;
 
     static std::string describe(const AccountXST& account);  // 如 "QQ 10002(小李飞刀)"
 
 private:
-    void switchService();
+    void switchService();                                     // 切到未登录的服务需先确认登录
 
     PlatformXST& m_platform;
-    const UserXST* m_user;
+    LoginManagerXST& m_session;
     ServiceTypeXST m_current;
 };
 

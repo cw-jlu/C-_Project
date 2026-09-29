@@ -31,13 +31,17 @@ public:
     UserXST* findUser(const std::string& id);
     const UserXST* findUser(const std::string& id) const;
     std::vector<const UserXST*> users() const;      // 按编号排序
+    bool removeUser(const std::string& id);         // 仅能删除尚未开通任何服务的用户
+    std::string nextUserId() const;                 // 下一个可用用户编号，如 "P007"
 
     // ---------- 开通 ----------
     // 为用户开通服务并创建账号；账号对应的 QQ 号（微博共用、微信绑定）必须是本人的 QQ
-    // 校验失败抛出 std::invalid_argument
+    // 校验失败（含密码格式错误）抛出 std::invalid_argument
     AccountXST& openService(const std::string& personId, ServiceTypeXST type,
                             const std::string& accountId, const std::string& nickname,
-                            const DateXST& registerDate, const std::string& extra = "");
+                            const std::string& password, const DateXST& registerDate,
+                            const std::string& extra = "");
+    std::string nextQQNumber() const;               // 下一个可分配的 QQ 号
 
     // 用户在某服务中的账号，未开通返回 nullptr
     AccountXST* accountOf(const std::string& personId, ServiceTypeXST type);

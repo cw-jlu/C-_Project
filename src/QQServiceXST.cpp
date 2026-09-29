@@ -5,6 +5,8 @@
 
 ServiceTypeXST QQServiceXST::type() const { return ServiceTypeXST::QQ; }
 
+AccountIdRuleXST QQServiceXST::idRule() const { return AccountIdRuleXST::NewQQNumber; }
+
 std::unique_ptr<AccountXST> QQServiceXST::createAccount(
     const std::string& id, const UserXST* owner, const std::string& nickname,
     const DateXST& registerDate, const std::string& /*extra*/) const {

@@ -1,5 +1,6 @@
 #include "PlatformXST.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "QQServiceXST.h"
@@ -69,15 +70,52 @@ std::vector<const UserXST*> PlatformXST::users() const {
     return result;
 }
 
+bool PlatformXST::removeUser(const std::string& id) {
+    auto it = m_users.find(id);
+    if (it == m_users.end() || !it->second->services().empty()) return false;
+    m_users.erase(it);
+    return true;
+}
+
+std::string PlatformXST::nextUserId() const {
+    int next = 1;
+    for (const auto& entry : m_users) {
+        const std::string& id = entry.first;
+        if (id.size() > 1 && id[0] == 'P') {
+            try {
+                next = std::max(next, std::stoi(id.substr(1)) + 1);
+            } catch (...) {
+                // 非 P+数字 格式的编号不参与计算
+            }
+        }
+    }
+    std::string digits = std::to_string(next);
+    return "P" + std::string(digits.size() < 3 ? 3 - digits.size() : 0, '0') + digits;
+}
+
+std::string PlatformXST::nextQQNumber() const {
+    long long next = 10001;
+    if (hasService(ServiceTypeXST::QQ)) {
+        for (const AccountXST* account : service(ServiceTypeXST::QQ).accounts()) {
+            next = std::max(next, std::stoll(account->id()) + 1);
+        }
+    }
+    return std::to_string(next);
+}
+
 AccountXST& PlatformXST::openService(const std::string& personId, ServiceTypeXST type,
                                      const std::string& accountId, const std::string& nickname,
-                                     const DateXST& registerDate, const std::string& extra) {
+                                     const std::string& password, const DateXST& registerDate,
+                                     const std::string& extra) {
     UserXST* user = findUser(personId);
     if (!user) throw std::invalid_argument("用户不存在: " + personId);
     ServiceXST& target = service(type);
 
     std::unique_ptr<AccountXST> account =
         target.createAccount(accountId, user, nickname, registerDate, extra);
+    if (!account->setPassword(password)) {
+        throw std::invalid_argument("密码格式错误（6~16 位，不含空白、逗号、分号）");
+    }
 
     // 微博与 QQ 共用号码、微信绑定 QQ：对应的 QQ 号必须是本人已开通的 QQ
     const std::string qq = account->linkedQQ();
