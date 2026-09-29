@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "AccountIdRuleXST.h"
 #include "AccountXST.h"
 #include "FriendOpResultXST.h"
 #include "GroupOpResultXST.h"
@@ -22,6 +23,9 @@ public:
 
     virtual ServiceTypeXST type() const = 0;
     std::string name() const;
+
+    // 开通时账号 ID 的产生方式：分配新 QQ 号 / 沿用本人 QQ 号 / 用户自定义独立 ID
+    virtual AccountIdRuleXST idRule() const = 0;
 
     // 工厂方法：创建本服务类型的账号（只创建，不加入容器）
     // extra：附加信息，微信为绑定的 QQ 号，其他服务忽略

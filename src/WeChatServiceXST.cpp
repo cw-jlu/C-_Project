@@ -5,6 +5,8 @@
 
 ServiceTypeXST WeChatServiceXST::type() const { return ServiceTypeXST::WeChat; }
 
+AccountIdRuleXST WeChatServiceXST::idRule() const { return AccountIdRuleXST::IndependentId; }
+
 std::unique_ptr<AccountXST> WeChatServiceXST::createAccount(
     const std::string& id, const UserXST* owner, const std::string& nickname,
     const DateXST& registerDate, const std::string& extra) const {

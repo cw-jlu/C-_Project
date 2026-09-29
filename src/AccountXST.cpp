@@ -29,6 +29,24 @@ int AccountXST::tAge(const DateXST& today) const {
     return years < 0 ? 0 : years;
 }
 
+bool AccountXST::isValidPassword(const std::string& password) {
+    if (password.size() < 6 || password.size() > 16) return false;
+    for (char c : password) {
+        if (c == ',' || c == ';' || c == ' ' || c == '\t' || c == '\r' || c == '\n') return false;
+    }
+    return true;
+}
+
+bool AccountXST::setPassword(const std::string& password) {
+    if (!isValidPassword(password)) return false;
+    m_password = password;
+    return true;
+}
+
+bool AccountXST::checkPassword(const std::string& password) const {
+    return !m_password.empty() && password == m_password;
+}
+
 std::string AccountXST::serviceName() const {
     return serviceDisplayName(serviceType());
 }

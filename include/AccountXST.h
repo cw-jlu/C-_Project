@@ -32,6 +32,12 @@ public:
     const DateXST& registerDate() const;
     int tAge(const DateXST& today = DateXST::today()) const;   // T 龄（整年）
 
+    // ---------- 密码 ----------
+    // 密码格式：6~16 位，不含空白、逗号、分号（逗号、分号为数据文件分隔符）
+    static bool isValidPassword(const std::string& password);
+    bool setPassword(const std::string& password);            // 格式不符返回 false
+    bool checkPassword(const std::string& password) const;    // 未设置密码时恒为 false
+
     // ---------- 由子类实现的多态接口 ----------
     virtual ServiceTypeXST serviceType() const = 0;
     virtual std::string idKindName() const = 0;                     // 如 "QQ号"、"微信号"
@@ -65,6 +71,7 @@ private:
     const UserXST* m_owner;          // 不拥有，由平台统一管理用户对象的生命周期
     std::string m_nickname;
     DateXST m_registerDate;
+    std::string m_password;
     FriendListXST m_friends;
     std::set<int> m_groups;
 };

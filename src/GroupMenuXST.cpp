@@ -8,8 +8,8 @@
 #include "GroupPolicyFactoryXST.h"
 #include "PlatformXST.h"
 
-GroupMenuXST::GroupMenuXST(PlatformXST& platform, const std::string& personId)
-    : ServiceMenuXST(platform, personId) {}
+GroupMenuXST::GroupMenuXST(PlatformXST& platform, LoginManagerXST& session)
+    : ServiceMenuXST(platform, session) {}
 
 std::string GroupMenuXST::title() const { return "»∫π‹¿Ì"; }
 

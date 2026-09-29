@@ -6,8 +6,8 @@
 #include "ConsoleXST.h"
 #include "PlatformXST.h"
 
-FriendMenuXST::FriendMenuXST(PlatformXST& platform, const std::string& personId)
-    : ServiceMenuXST(platform, personId), m_manager(platform) {}
+FriendMenuXST::FriendMenuXST(PlatformXST& platform, LoginManagerXST& session)
+    : ServiceMenuXST(platform, session), m_manager(platform) {}
 
 std::string FriendMenuXST::title() const { return "∫√”—π‹¿Ì"; }
 

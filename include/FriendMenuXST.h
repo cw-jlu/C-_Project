@@ -11,7 +11,7 @@
 // 好友管理菜单：在当前服务中维护好友，并支持跨服务的共同好友与推荐
 class FriendMenuXST : public ServiceMenuXST {
 public:
-    FriendMenuXST(PlatformXST& platform, const std::string& personId);
+    FriendMenuXST(PlatformXST& platform, LoginManagerXST& session);
 
 protected:
     std::string title() const override;

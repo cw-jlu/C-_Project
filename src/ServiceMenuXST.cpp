@@ -4,22 +4,18 @@
 #include <stdexcept>
 
 #include "ConsoleXST.h"
+#include "LoginManagerXST.h"
 #include "PlatformXST.h"
 
-ServiceMenuXST::ServiceMenuXST(PlatformXST& platform, const std::string& personId)
-    : m_platform(platform), m_user(platform.findUser(personId)), m_current(ServiceTypeXST::QQ) {
-    if (!m_user) throw std::invalid_argument("用户不存在: " + personId);
-    if (!m_user->services().empty()) m_current = *m_user->services().begin();
+ServiceMenuXST::ServiceMenuXST(PlatformXST& platform, LoginManagerXST& session)
+    : m_platform(platform), m_session(session), m_current(session.primaryService()) {
+    if (!m_session.isActive()) throw std::logic_error("尚未登录");
 }
 
 void ServiceMenuXST::run() {
-    if (m_user->services().empty()) {
-        std::cout << m_user->name() << " 尚未开通任何服务。\n";
-        return;
-    }
     const std::vector<std::string> options = items();
     while (true) {
-        std::cout << "\n===== " << title() << "  用户: " << m_user->name()
+        std::cout << "\n===== " << title() << "  用户: " << user().name()
                   << "  当前: " << describe(currentAccount()) << " =====\n"
                   << "1. 切换服务\n";
         for (size_t i = 0; i < options.size(); ++i) {
@@ -37,18 +33,19 @@ void ServiceMenuXST::run() {
 }
 
 PlatformXST& ServiceMenuXST::platform() const { return m_platform; }
-const UserXST& ServiceMenuXST::user() const { return *m_user; }
+LoginManagerXST& ServiceMenuXST::session() const { return m_session; }
+const UserXST& ServiceMenuXST::user() const { return *m_session.currentUser(); }
 ServiceTypeXST ServiceMenuXST::currentType() const { return m_current; }
 ServiceXST& ServiceMenuXST::currentService() const { return m_platform.service(m_current); }
 
 AccountXST& ServiceMenuXST::currentAccount() const {
-    return *m_platform.accountOf(m_user->id(), m_current);
+    return *m_platform.accountOf(user().id(), m_current);
 }
 
 bool ServiceMenuXST::chooseService(const std::string& prompt, bool excludeCurrent,
                                    ServiceTypeXST& out) const {
     std::vector<ServiceTypeXST> options;
-    for (ServiceTypeXST type : m_user->services()) {
+    for (ServiceTypeXST type : user().services()) {
         if (excludeCurrent && type == m_current) continue;
         options.push_back(type);
     }
@@ -59,7 +56,8 @@ bool ServiceMenuXST::chooseService(const std::string& prompt, bool excludeCurren
     std::cout << prompt << "\n";
     for (size_t i = 0; i < options.size(); ++i) {
         std::cout << "  " << i + 1 << ". "
-                  << describe(*m_platform.accountOf(m_user->id(), options[i])) << "\n";
+                  << describe(*m_platform.accountOf(user().id(), options[i]))
+                  << (m_session.isLoggedIn(options[i]) ? "  [已登录]" : "  [未登录]") << "\n";
     }
     std::cout << "  0. 取消\n";
     int choice = ConsoleXST::readInt("请选择: ", 0, static_cast<int>(options.size()));
@@ -70,7 +68,14 @@ bool ServiceMenuXST::chooseService(const std::string& prompt, bool excludeCurren
 
 void ServiceMenuXST::switchService() {
     ServiceTypeXST type;
-    if (chooseService("选择要切换到的服务:", false, type)) m_current = type;
+    if (!chooseService("选择要切换到的服务:", false, type)) return;
+    if (!m_session.isLoggedIn(type)) {
+        // 已通过其他服务登录，简单确认即可登录，无需密码
+        if (!ConsoleXST::confirm("尚未登录" + serviceDisplayName(type) + "，确认登录")) return;
+        std::cout << loginMessage(m_session.confirm(type)) << "\n";
+        if (!m_session.isLoggedIn(type)) return;
+    }
+    m_current = type;
 }
 
 std::string ServiceMenuXST::describe(const AccountXST& account) {
