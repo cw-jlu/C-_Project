@@ -5,7 +5,7 @@
 
 class PlatformXST;
 
-// 平台入口菜单：登录、注册新用户、退出
+// 平台入口菜单：登录、注册新用户、功能展示、平台概览、退出
 class MainMenuXST {
 public:
     explicit MainMenuXST(PlatformXST& platform);
@@ -15,6 +15,7 @@ public:
 private:
     void login();
     void registerUser();
+    void showOverview() const;
 
     PlatformXST& m_platform;
     LoginManagerXST m_session;

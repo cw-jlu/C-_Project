@@ -4,9 +4,11 @@
 #include <vector>
 
 #include "ConsoleXST.h"
+#include "DisplayXST.h"
 #include "HomeMenuXST.h"
 #include "OpenServiceMenuXST.h"
 #include "PlatformXST.h"
+#include "ShowcaseMenuXST.h"
 
 namespace {
 // 从平台已注册的服务中选择一个，0 取消
@@ -35,15 +37,24 @@ void MainMenuXST::run() {
                   << "==============================\n"
                   << "1. 登录\n"
                   << "2. 注册新用户\n"
+                  << "3. 功能展示（按题目要求逐项演示）\n"
+                  << "4. 平台概览（查看全部用户、账号与群）\n"
                   << "0. 退出\n";
-        int choice = ConsoleXST::readInt("请选择: ", 0, 2);
-        if (choice == 0) return;
-        if (choice == 1) {
-            login();
-        } else {
-            registerUser();
+        int choice = ConsoleXST::readInt("请选择: ", 0, 4);
+        switch (choice) {
+            case 1: login(); break;
+            case 2: registerUser(); break;
+            case 3: ShowcaseMenuXST().run(); break;
+            case 4: showOverview(); break;
+            default: return;
         }
     }
+}
+
+void MainMenuXST::showOverview() const {
+    DisplayXST::printPlatformOverview(std::cout, m_platform);
+    std::cout << "\n提示: 预置账号的密码均为 123456，可用任意账号登录\n";
+    ConsoleXST::pause();
 }
 
 void MainMenuXST::login() {

@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "ConsoleXST.h"
+#include "DisplayXST.h"
 #include "LoginManagerXST.h"
 #include "PlatformXST.h"
 
@@ -79,5 +80,5 @@ void ServiceMenuXST::switchService() {
 }
 
 std::string ServiceMenuXST::describe(const AccountXST& account) {
-    return account.serviceName() + " " + account.id() + "(" + account.nickname() + ")";
+    return DisplayXST::describe(account);
 }

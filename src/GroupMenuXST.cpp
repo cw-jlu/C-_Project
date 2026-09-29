@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include "ConsoleXST.h"
+#include "DisplayXST.h"
 #include "GroupPolicyFactoryXST.h"
 #include "PlatformXST.h"
 
@@ -176,44 +177,11 @@ const GroupXST* GroupMenuXST::chooseGroup() const {
 }
 
 void GroupMenuXST::printGroupInfo(const GroupXST& group) const {
-    const GroupPolicyXST& policy = group.policy();
-    std::cout << "群 " << group.id() << "「" << group.name() << "」  管理模式: " << policy.name()
-              << "  成员 " << group.members().size() << " 人\n";
-    std::cout << "  " << std::left << std::setw(16) << "成员ID" << std::setw(18) << "昵称"
-              << "身份\n";
-    for (const std::string& id : group.members()) {
-        const AccountXST* account = currentService().findAccount(id);
-        std::string role = groupRoleName(group.roleOf(id));
-        if (!policy.supportsAdmins() && group.adminRecords().count(id)) {
-            role += "（管理员身份已保留）";
-        }
-        std::cout << "  " << std::setw(16) << id << std::setw(18)
-                  << (account ? account->nickname() : "?") << role << "\n";
-    }
-    std::cout << std::right;
-
-    if (!policy.supportsAdmins() && !group.adminRecords().empty()) {
-        std::cout << "  * 当前模式没有管理员制度，已保留 " << group.adminRecords().size()
-                  << " 条管理员记录，切换回支持的模式后恢复\n";
-    }
-    const std::vector<SubGroupXST>& subs = group.subGroupRecords();
-    if (policy.supportsSubGroups()) {
-        std::cout << "  临时讨论组（" << subs.size() << " 个）:\n";
-        for (const SubGroupXST& s : subs) {
-            std::cout << "    [" << s.name() << "] 发起人 " << s.creatorId()
-                      << "  成员: " << s.membersText() << "\n";
-        }
-    } else if (!subs.empty()) {
-        std::cout << "  * 当前模式不支持临时讨论组，已保留 " << subs.size()
-                  << " 个讨论组数据，切换回支持的模式后恢复\n";
-    }
+    DisplayXST::printGroupInfo(std::cout, currentService(), group);
 }
 
 void GroupMenuXST::printFeatures(const GroupPolicyXST& policy) {
-    std::cout << "「" << policy.name() << "」模式特色:\n";
-    for (const std::string& line : policy.features()) {
-        std::cout << "  - " << line << "\n";
-    }
+    DisplayXST::printFeatures(std::cout, policy);
 }
 
 void GroupMenuXST::report(GroupOpResultXST result, const GroupXST& group) const {
