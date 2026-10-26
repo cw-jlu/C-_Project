@@ -5,7 +5,7 @@
 
 class PlatformXST;
 
-// 平台入口菜单：登录、注册新用户、功能展示、平台概览、退出
+// 平台入口：先选择微X服务，再进入该服务的登录、注册等菜单
 class MainMenuXST {
 public:
     explicit MainMenuXST(PlatformXST& platform);
@@ -13,8 +13,9 @@ public:
     void run();
 
 private:
-    void login();
-    void registerUser();
+    void runService(ServiceTypeXST type);
+    void login(ServiceTypeXST type);
+    void registerUser(ServiceTypeXST type);
     void showOverview() const;
 
     PlatformXST& m_platform;

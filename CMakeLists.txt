@@ -21,7 +21,3 @@ target_compile_options(IMSystemXST PRIVATE -Wall -Wextra)
 
 # 静态链接运行库，exe 拷到别的电脑（验收机）也能直接运行
 target_link_options(IMSystemXST PRIVATE -static-libgcc -static-libstdc++ -static)
-
-if(WIN32)
-    target_link_libraries(IMSystemXST PRIVATE ws2_32)   # TCP 通信（选做）
-endif()

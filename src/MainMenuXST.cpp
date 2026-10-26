@@ -8,44 +8,41 @@
 #include "HomeMenuXST.h"
 #include "OpenServiceMenuXST.h"
 #include "PlatformXST.h"
-#include "ShowcaseMenuXST.h"
-
-namespace {
-// 从平台已注册的服务中选择一个，0 取消
-bool chooseServiceType(const PlatformXST& platform, const std::string& prompt,
-                       ServiceTypeXST& out) {
-    std::vector<ServiceTypeXST> types = platform.serviceTypes();
-    std::cout << prompt << "\n";
-    for (size_t i = 0; i < types.size(); ++i) {
-        std::cout << "  " << i + 1 << ". " << serviceDisplayName(types[i]) << "\n";
-    }
-    std::cout << "  0. 取消\n";
-    int choice = ConsoleXST::readInt("请选择: ", 0, static_cast<int>(types.size()));
-    if (choice == 0) return false;
-    out = types[choice - 1];
-    return true;
-}
-}
 
 MainMenuXST::MainMenuXST(PlatformXST& platform)
     : m_platform(platform), m_session(platform) {}
 
 void MainMenuXST::run() {
+    // 通过服务基类访问具体服务，入口不重复实现三套登录逻辑。
+    const std::vector<ServiceTypeXST> types = m_platform.serviceTypes();
     while (true) {
         std::cout << "\n==============================\n"
                   << "   腾*立体社交平台  (XST)\n"
                   << "==============================\n"
-                  << "1. 登录\n"
-                  << "2. 注册新用户\n"
-                  << "3. 功能展示（按题目要求逐项演示）\n"
-                  << "4. 平台概览（查看全部用户、账号与群）\n"
-                  << "0. 退出\n";
-        int choice = ConsoleXST::readInt("请选择: ", 0, 4);
+                  << "请先选择服务，再登录对应账号:\n";
+        for (size_t i = 0; i < types.size(); ++i) {
+            std::cout << i + 1 << ". " << m_platform.service(types[i]).name() << "\n";
+        }
+        std::cout << "0. 退出\n";
+        int choice = ConsoleXST::readInt("请选择: ", 0, static_cast<int>(types.size()));
+        if (choice == 0) return;
+        runService(types[choice - 1]);
+    }
+}
+
+void MainMenuXST::runService(ServiceTypeXST type) {
+    const ServiceXST& service = m_platform.service(type);
+    while (true) {
+        std::cout << "\n===== " << service.name() << " 服务入口 =====\n"
+                  << "1. 登录" << service.name() << "\n"
+                  << "2. 注册新用户并开通" << service.name() << "\n"
+                  << "3. 平台概览（查看全部用户、账号与群）\n"
+                  << "0. 返回服务选择\n";
+        int choice = ConsoleXST::readInt("请选择: ", 0, 3);
         switch (choice) {
-            case 1: login(); break;
-            case 2: registerUser(); break;
-            case 3: ShowcaseMenuXST().run(); break;
-            case 4: showOverview(); break;
+            case 1: login(type); break;
+            case 2: registerUser(type); break;
+            case 3: showOverview(); break;
             default: return;
         }
     }
@@ -57,11 +54,13 @@ void MainMenuXST::showOverview() const {
     ConsoleXST::pause();
 }
 
-void MainMenuXST::login() {
-    ServiceTypeXST type;
-    if (!chooseServiceType(m_platform, "选择要登录的服务:", type)) return;
-    std::string id = ConsoleXST::readLine(serviceDisplayName(type) + "号: ");
+void MainMenuXST::login(ServiceTypeXST type) {
+    const ServiceXST& service = m_platform.service(type);
+    std::cout << "\n===== 登录" << service.name() << "（账号留空返回） =====\n";
+    std::string id = ConsoleXST::readLine(service.name() + "号: ");
+    if (id.empty()) return;
     std::string password = ConsoleXST::readLine("密码: ");
+    if (ConsoleXST::eof()) return;
 
     LoginResultXST result = m_session.login(type, id, password);
     std::cout << loginMessage(result) << "\n";
@@ -89,8 +88,14 @@ void MainMenuXST::login() {
     std::cout << user.name() << " 已注销。\n";
 }
 
-void MainMenuXST::registerUser() {
-    std::cout << "\n===== 注册新用户 =====\n";
+void MainMenuXST::registerUser(ServiceTypeXST type) {
+    const ServiceXST& service = m_platform.service(type);
+    // 沿用服务子类提供的号码规则，微博等共享QQ号码的服务需先建立QQ账号。
+    const bool needsQQ = service.idRule() == AccountIdRuleXST::SharedQQNumber;
+    std::cout << "\n===== 注册新用户并开通" << service.name() << " =====\n";
+    if (needsQQ && !ConsoleXST::confirm(service.name() + "与 QQ 共用号码，是否先开通 QQ 再继续")) {
+        return;
+    }
     std::string name = ConsoleXST::readLine("姓名: ");
     if (name.empty()) return;
 
@@ -103,17 +108,22 @@ void MainMenuXST::registerUser() {
     }
     std::string location = ConsoleXST::readLine("所在地: ");
 
-    ServiceTypeXST type;
-    if (!chooseServiceType(m_platform, "选择要开通的第一个服务（微博与 QQ 共用号码，需先开通 QQ）:", type)) {
-        return;
-    }
-
     const std::string personId = m_platform.nextUserId();
     m_platform.addUser(personId, name, birthday, location);
+    if (needsQQ && !OpenServiceMenuXST::openInteractive(m_platform, personId, ServiceTypeXST::QQ)) {
+        m_platform.removeUser(personId);
+        std::cout << "QQ 未开通，注册未完成。\n";
+        return;
+    }
     const AccountXST* account = OpenServiceMenuXST::openInteractive(m_platform, personId, type);
     if (!account) {
-        m_platform.removeUser(personId);   // 未能开通任何服务，撤销注册
-        std::cout << "注册未完成。\n";
+        if (m_platform.removeUser(personId)) {
+            std::cout << "注册未完成。\n";
+        } else {
+            const AccountXST* qq = m_platform.accountOf(personId, ServiceTypeXST::QQ);
+            std::cout << service.name() << "未开通，已开通的 QQ " << qq->id()
+                      << " 已保留。可登录 QQ 后在开通管理中继续开通。\n";
+        }
         return;
     }
     std::cout << "注册成功！用户编号 " << personId << "，请使用" << account->serviceName()

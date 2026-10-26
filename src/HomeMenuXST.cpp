@@ -23,7 +23,8 @@ HomeMenuXST::HomeMenuXST(PlatformXST& platform, LoginManagerXST& session)
 void HomeMenuXST::run() {
     while (true) {
         const UserXST& user = *m_session.currentUser();
-        std::cout << "\n===== " << user.name() << " (" << user.id() << ")  " << statusLine()
+        std::cout << "\n===== " << serviceDisplayName(m_session.primaryService()) << " 个人主页  "
+                  << user.name() << " (" << user.id() << ")  " << statusLine()
                   << " =====\n"
                   << "1. 好友管理\n"
                   << "2. 群管理\n"
